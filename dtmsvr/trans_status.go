@@ -157,7 +157,8 @@ func (t *TransGlobal) getHTTPResult(uri string, branchID, op string, branchPaylo
 	if err != nil {
 		return err
 	}
-	return dtmcli.HTTPResp2DtmError(resp)
+	return dtmcli.HTTPSuccessResp2DtmError(resp, "100000")
+	//return dtmcli.HTTPResp2DtmError(resp)
 }
 
 func (t *TransGlobal) determineHTTPRequestMethod(branchPayload []byte) string {

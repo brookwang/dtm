@@ -3,11 +3,11 @@ package dtmcli
 import (
 	"errors"
 	"fmt"
-	"net/http"
-	"strings"
-
+	"github.com/bitly/go-simplejson"
 	"github.com/dtm-labs/dtm/client/dtmcli/dtmimp"
 	"github.com/go-resty/resty/v2"
+	"net/http"
+	"strings"
 )
 
 // MustGenGid generate a new gid
@@ -40,6 +40,31 @@ func HTTPResp2DtmError(resp *resty.Response) error {
 	} else if code != http.StatusOK {
 		return errors.New(str)
 	}
+	return nil
+}
+
+// 增加响应业务code处理
+// compatible with version < v1.10
+func HTTPSuccessResp2DtmError(resp *resty.Response, successCode string) error {
+	code := resp.StatusCode()
+	str := resp.String()
+	if code == http.StatusTooEarly || strings.Contains(str, ResultOngoing) {
+		return ErrorMessage2Error(str, ErrOngoing)
+	} else if code == http.StatusConflict || strings.Contains(str, ResultFailure) {
+		return ErrorMessage2Error(str, ErrFailure)
+	} else if code != http.StatusOK {
+		return errors.New(str)
+	}
+	js, err := simplejson.NewJson([]byte(str))
+	if err != nil {
+		return err
+	}
+	//返回业务code非成功码，则返回错误，字符串格式比较
+	resCode := js.Get("code").MustString()
+	if resCode != successCode {
+		return errors.New(str)
+	}
+	//返回业务code成功码，则返回nil
 	return nil
 }
 
